@@ -9,6 +9,11 @@ class CountryBaseSchema(BaseModel):
     name: str | None
 
 
+class GenreBaseSchema(BaseModel):
+    id: int
+    name: str
+
+
 class MovieListItemSchema(BaseModel):
     id: int
     name: str
