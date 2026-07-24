@@ -7,11 +7,13 @@ class CountryBaseSchema(BaseModel):
     id: int
     code: str
     name: str | None
+    model_config = ConfigDict(from_attributes=True)
 
 
 class GenreBaseSchema(BaseModel):
     id: int
     name: str
+    model_config = ConfigDict(from_attributes=True)
 
 
 class MovieListItemSchema(BaseModel):
