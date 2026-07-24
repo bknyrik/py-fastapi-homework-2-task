@@ -1,6 +1,13 @@
 import datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    field_validator,
+    ValidationError
+)
+from iso3166 import countries_by_alpha3
 
 from src.database.models import MovieStatusEnum
 
@@ -68,3 +75,13 @@ class MovieCreateSchema(MovieBaseSchema):
     genres: list[str]
     actors: list[str]
     languages: list[str]
+
+    @field_validator("country", mode="before")
+    @classmethod
+    def match_to_iso3166_alpha3(cls, value: str) -> str:
+        if not countries_by_alpha3.get(value):
+            raise ValidationError(
+                "Country does not match the iso3166-1 alpha-3 code"
+            )
+
+        return value
