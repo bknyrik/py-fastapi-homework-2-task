@@ -22,6 +22,12 @@ class ActorBaseSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class LanguageBaseSchema(BaseModel):
+    id: int
+    name: str
+    model_config = ConfigDict(from_attributes=True)
+
+
 class MovieListItemSchema(BaseModel):
     id: int
     name: str
