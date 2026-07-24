@@ -44,6 +44,14 @@ class MovieBaseSchema(BaseModel):
     score: float = Field(ge=0, le=100)
     overview: str
 
+    @field_validator("date", mode="before")
+    @classmethod
+    def more_than_one_year_in_future(cls, value: datetime.date) -> datetime.date:
+        if datetime.datetime.now().year - value.year > 1:
+            raise ValidationError("Date must be more than one year in future")
+
+        return value
+
 
 class MovieListItemSchema(MovieBaseSchema):
     model_config = ConfigDict(from_attributes=True)
