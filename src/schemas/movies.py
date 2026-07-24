@@ -16,6 +16,12 @@ class GenreBaseSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class ActorBaseSchema(BaseModel):
+    id: int
+    name: str
+    model_config = ConfigDict(from_attributes=True)
+
+
 class MovieListItemSchema(BaseModel):
     id: int
     name: str
