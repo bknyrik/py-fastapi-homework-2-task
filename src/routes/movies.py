@@ -34,3 +34,24 @@ async def get_movie_by_id(
         )
 
     return movie_item
+
+
+@router.delete("/movies/{movie_id}/")
+async def delete_movie_by_id(
+    movie_id: int,
+    db: AsyncSession = Depends(get_db)
+) -> None:
+    result = await db.execute(
+        select(MovieModel)
+        .where(MovieModel.id == movie_id)
+    )
+    movie_item = result.scalar_one_or_none()
+
+    if not movie_item:
+        raise HTTPException(
+            status_code=404,
+            detail="Movie with the given ID was not found."
+        )
+
+    await db.delete(movie_item)
+    await db.commit()
