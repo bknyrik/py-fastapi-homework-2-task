@@ -32,9 +32,9 @@ class LanguageBaseSchema(BaseModel):
 
 class MovieBaseSchema(BaseModel):
     id: int
-    name: str
+    name: str = Field(max_length=255)
     date: datetime.date
-    score: float
+    score: float = Field(ge=0, le=100)
     overview: str
 
 
