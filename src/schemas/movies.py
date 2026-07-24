@@ -3,6 +3,12 @@ import datetime
 from pydantic import BaseModel, ConfigDict
 
 
+class CountryBaseSchema(BaseModel):
+    id: int
+    code: str
+    name: str | None
+
+
 class MovieListItemSchema(BaseModel):
     id: int
     name: str
