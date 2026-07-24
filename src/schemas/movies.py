@@ -36,12 +36,7 @@ class MovieBaseSchema(BaseModel):
     overview: str
 
 
-class MovieListItemSchema(BaseModel):
-    id: int
-    name: str
-    date: datetime.date
-    score: float
-    overview: str
+class MovieListItemSchema(MovieBaseSchema):
     model_config = ConfigDict(from_attributes=True)
 
 
