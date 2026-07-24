@@ -1,6 +1,6 @@
 import datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from src.database.models import MovieStatusEnum
 
@@ -58,3 +58,13 @@ class MovieDetailSchema(MovieBaseSchema):
     genres: list[GenreBaseSchema]
     actors: list[ActorBaseSchema]
     languages: list[LanguageBaseSchema]
+
+
+class MovieCreateSchema(MovieBaseSchema):
+    status: MovieStatusEnum
+    budget: float = Field(ge=1)
+    revenue: float= Field(ge=1)
+    country: str
+    genres: list[str]
+    actors: list[str]
+    languages: list[str]
