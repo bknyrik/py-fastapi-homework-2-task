@@ -2,6 +2,8 @@ import datetime
 
 from pydantic import BaseModel, ConfigDict
 
+from src.database.models import MovieStatusEnum
+
 
 class CountryBaseSchema(BaseModel):
     id: int
@@ -46,3 +48,13 @@ class MovieListResponseSchema(BaseModel):
     next_page: str | None
     total_pages: int
     total_items: int
+
+
+class MovieDetailSchema(MovieBaseSchema):
+    status: MovieStatusEnum
+    budget: float
+    revenue: float
+    country: CountryBaseSchema
+    genres: list[GenreBaseSchema]
+    actors: list[ActorBaseSchema]
+    languages: list[LanguageBaseSchema]
