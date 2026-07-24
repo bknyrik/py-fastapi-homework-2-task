@@ -28,6 +28,14 @@ class LanguageBaseSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class MovieBaseSchema(BaseModel):
+    id: int
+    name: str
+    date: datetime.date
+    score: float
+    overview: str
+
+
 class MovieListItemSchema(BaseModel):
     id: int
     name: str
