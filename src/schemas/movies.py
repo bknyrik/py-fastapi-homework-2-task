@@ -93,3 +93,13 @@ class MovieCreateSchema(MovieBaseSchema):
             )
 
         return value
+
+
+class MovieUpdateSchema(BaseModel):
+    name: str | None = Field(max_length=255, default=None)
+    date: datetime.date | None = None
+    score: float = Field(ge=0, le=100, default=None)
+    overview: str | None = None
+    status: MovieStatusEnum | None = None
+    budget: float = Field(ge=0, default=None)
+    revenue: float = Field(ge=0, default=None)
