@@ -1,4 +1,3 @@
-import code
 import math
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -61,31 +60,38 @@ async def get_all_movies(
     )
 
 
-@router.post("/movies/", response_model=movies.MovieDetailSchema)
+@router.post(
+    "/movies/",
+    response_model=movies.MovieDetailSchema,
+    status_code=201
+)
 async def create_movie(
     data: movies.MovieCreateSchema,
     db: AsyncSession = Depends(get_db)
 ) -> MovieModel:
     async def _get_or_create_items(
-        movie: MovieModel,
         item_model: type,
         items_data: list[str],
-        item_name: str
-    ) -> None:
+        db_: AsyncSession
+    ) -> list:
+        items = []
+
         for item_data in items_data:
             try:
                 item = item_model(name=item_data)
-                db.add(item)
-                await db.commit()
-                await db.refresh(item)
+                db_.add(item)
+                await db_.commit()
+                await db_.refresh(item)
             except IntegrityError:
-                item_result = await db.execute(
+                item_result = await db_.execute(
                     select(item_model)
                     .where(item_model.name == item_data)
                 )
                 item = item_result.scalar_one()
 
-            getattr(movie, item_name).append(item)
+            items.append(item)
+
+        return items
 
 
     existing_movie_result = await db.execute(
@@ -99,7 +105,7 @@ async def create_movie(
             MovieModel.date == data.date
         )
     )
-    existing_movie = existing_movie_result.scalar_one_or_none()
+    existing_movie = existing_movie_result.unique().scalar_one_or_none()
 
     if existing_movie:
         raise HTTPException(
@@ -110,12 +116,13 @@ async def create_movie(
             )
         )
 
-    country_data = data.model_dump().pop("country")
-    genres_data = data.model_dump().pop("genres")
-    actors_data = data.model_dump().pop("actors")
-    languages_data = data.model_dump().pop("languages")
+    data = data.model_dump()
+    country_data = data.pop("country")
+    genres_data = data.pop("genres")
+    actors_data = data.pop("actors")
+    languages_data = data.pop("languages")
 
-    movie = MovieModel(**data.model_dump())
+    movie = MovieModel(**data)
 
     try:
         country = CountryModel(code=country_data)
@@ -131,30 +138,44 @@ async def create_movie(
 
     movie.country = country
 
-    await _get_or_create_items(
-        movie,
+    genres = await _get_or_create_items(
         GenreModel,
         genres_data,
-        "genres"
+        db
     )
-    await _get_or_create_items(
-        movie,
+    actors = await _get_or_create_items(
         ActorModel,
         actors_data,
-        "actors"
+        db
     )
-    await _get_or_create_items(
-        movie,
+    languages = await _get_or_create_items(
         LanguageModel,
         languages_data,
-        "languages"
+        db
     )
+
+    movie.genres = genres
+    movie.actors = actors
+    movie.languages = languages
 
     db.add(movie)
     await db.commit()
     await db.refresh(movie)
 
-    return movie
+    return movies.MovieDetailSchema(
+        id=movie.id,
+        name=movie.name,
+        date=movie.date,
+        score=movie.score,
+        overview=movie.overview,
+        status=movie.status,
+        budget=movie.budget,
+        revenue=movie.revenue,
+        country=country,
+        genres=genres,
+        actors=actors,
+        languages=languages,
+    )
 
 
 @router.get("/movies/{movie_id}/", response_model=movies.MovieDetailSchema)
