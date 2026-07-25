@@ -22,7 +22,7 @@ async def get_all_movies(
     db: AsyncSession = Depends(get_db)
 ) -> movies.MovieListResponseSchema:
     total_items_result = await db.execute(
-        select(func.count(MovieModel))
+        select(func.count(MovieModel.id))
     )
     total_items = total_items_result.scalar_one()
     total_pages = math.ceil(total_items / per_page)
@@ -49,7 +49,7 @@ async def get_all_movies(
     return movies.MovieListResponseSchema(
         movies=movies_items,
         prev_page=(
-            f"/theater/movies/?page={page}&per_page={per_page}"
+            f"/theater/movies/?page={page - 1}&per_page={per_page}"
             if page > 1 else None
         ),
         next_page=(
