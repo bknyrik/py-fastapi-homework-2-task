@@ -1,7 +1,7 @@
 import math
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select, func
+from sqlalchemy import select, func, insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
@@ -82,6 +82,41 @@ async def get_movie_by_id(
         )
 
     return movie_item
+
+
+@router.patch("/movies/{movie_id}/")
+async def update_movie_by_id(
+    movie_id: int,
+    data: movies.MovieUpdateSchema,
+    db: AsyncSession = Depends(get_db)
+) -> dict:
+    result = await db.execute(
+        select(MovieModel).where(MovieModel.id == movie_id)
+    )
+    movie: MovieModel = result.scalar_one_or_none()
+
+    if not movie:
+        raise HTTPException(
+            status_code=404,
+            detail="Movie with the given ID was not found."
+        )
+
+    movie.name = data.name if data.name is not None else movie.name
+    movie.date = data.date if data.date is not None else movie.date
+    movie.score = data.score if data.score is not None else movie.score
+    movie.overview = (
+        data.overview
+        if data.overview is not None
+        else movie.overview
+    )
+    movie.status = data.status if data.status is not None else movie.status
+    movie.budget = data.budget if data.budget is not None else movie.budget
+    movie.revenue = data.revenue if data.revenue is not None else movie.revenue
+
+    await db.commit()
+    await db.refresh(movie)
+
+    return {"detail": "Movie updated successfully."}
 
 
 @router.delete("/movies/{movie_id}/")
