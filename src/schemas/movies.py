@@ -46,9 +46,13 @@ class MovieBaseSchema(BaseModel):
 
     @field_validator("date", mode="before")
     @classmethod
-    def more_than_one_year_in_future(cls, value: datetime.date) -> datetime.date:
-        if datetime.datetime.now().year - value.year > 1:
-            raise ValidationError("Date must be more than one year in future")
+    def more_than_one_year_in_future(cls, value: datetime.date | str) -> datetime.date:
+        if isinstance(value, str):
+            value = datetime.datetime.strptime(value, "%Y-%m-%d").date()
+
+        now = datetime.datetime.now()
+        if value.year - now.year > 1:
+            raise ValueError("Date must be more than one year in future")
 
         return value
 
@@ -88,7 +92,7 @@ class MovieCreateSchema(MovieBaseSchema):
     @classmethod
     def match_to_iso3166_alpha3(cls, value: str) -> str:
         if not countries_by_alpha3.get(value):
-            raise ValidationError(
+            raise ValueError(
                 "Country does not match the iso3166-1 alpha-3 code"
             )
 
