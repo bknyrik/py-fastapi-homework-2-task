@@ -216,7 +216,7 @@ async def update_movie_by_id(
     return {"detail": "Movie updated successfully."}
 
 
-@router.delete("/movies/{movie_id}/")
+@router.delete("/movies/{movie_id}/", status_code=204)
 async def delete_movie_by_id(
     movie_id: int,
     db: AsyncSession = Depends(get_db)
