@@ -93,7 +93,6 @@ async def create_movie(
 
         return items
 
-
     existing_movie_result = await db.execute(
         select(MovieModel)
         .options(joinedload(MovieModel.genres))
