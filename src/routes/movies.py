@@ -1,7 +1,8 @@
+import code
 import math
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select, func, insert
+from sqlalchemy import select, func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
@@ -58,6 +59,102 @@ async def get_all_movies(
         total_items=total_items,
         total_pages=total_pages
     )
+
+
+@router.post("/movies/", response_model=movies.MovieDetailSchema)
+async def create_movie(
+    data: movies.MovieCreateSchema,
+    db: AsyncSession = Depends(get_db)
+) -> MovieModel:
+    async def _get_or_create_items(
+        movie: MovieModel,
+        item_model: type,
+        items_data: list[str],
+        item_name: str
+    ) -> None:
+        for item_data in items_data:
+            try:
+                item = item_model(name=item_data)
+                db.add(item)
+                await db.commit()
+                await db.refresh(item)
+            except IntegrityError:
+                item_result = await db.execute(
+                    select(item_model)
+                    .where(item_model.name == item_data)
+                )
+                item = item_result.scalar_one()
+
+            getattr(movie, item_name).append(item)
+
+
+    existing_movie_result = await db.execute(
+        select(MovieModel)
+        .options(joinedload(MovieModel.genres))
+        .options(joinedload(MovieModel.country))
+        .options(joinedload(MovieModel.languages))
+        .options(joinedload(MovieModel.actors))
+        .where(
+            MovieModel.name == data.name,
+            MovieModel.date == data.date
+        )
+    )
+    existing_movie = existing_movie_result.scalar_one_or_none()
+
+    if existing_movie:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                f"A movie with the name '{data.name}' "
+                f"and release date '{data.date}' already exists."
+            )
+        )
+
+    country_data = data.model_dump().pop("country")
+    genres_data = data.model_dump().pop("genres")
+    actors_data = data.model_dump().pop("actors")
+    languages_data = data.model_dump().pop("languages")
+
+    movie = MovieModel(**data.model_dump())
+
+    try:
+        country = CountryModel(code=country_data)
+        db.add(country)
+        await db.commit()
+        await db.refresh(country)
+    except IntegrityError:
+        country_result = await db.execute(
+            select(CountryModel)
+            .where(CountryModel.name == country_data)
+        )
+        country = country_result.scalar_one()
+
+    movie.country = country
+
+    await _get_or_create_items(
+        movie,
+        GenreModel,
+        genres_data,
+        "genres"
+    )
+    await _get_or_create_items(
+        movie,
+        ActorModel,
+        actors_data,
+        "actors"
+    )
+    await _get_or_create_items(
+        movie,
+        LanguageModel,
+        languages_data,
+        "languages"
+    )
+
+    db.add(movie)
+    await db.commit()
+    await db.refresh(movie)
+
+    return movie
 
 
 @router.get("/movies/{movie_id}/", response_model=movies.MovieDetailSchema)
